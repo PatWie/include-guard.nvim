@@ -9,13 +9,14 @@ function M.setup(opts)
 end
 
 function M.UpdateCopyright()
-  local pos = vim.fn.search("^// Copyright.*", "n") - 1
-	local copyright_string = "// Copyright "
-		.. os.date("%Y")
-		.. " "
-		.. M.opts.copyright_holder
-		.. ". All Rights Reserved."
-  vim.api.nvim_buf_set_lines(0, pos, pos + 1, false, { copyright_string })
+	local pos = vim.fn.search("^// Copyright.*", "n") - 1
+	vim.api.nvim_buf_set_lines(0, pos, pos + 1, false, { "// " .. M.GetCopyrightString() })
+end
+
+-- returns the copyright string for snippets
+function M.GetCopyrightString()
+	local copyright_string = "Copyright " .. os.date("%Y") .. " " .. M.opts.copyright_holder .. ". All Rights Reserved."
+	return copyright_string
 end
 
 local function AddCopyright()
@@ -50,6 +51,19 @@ local function replace_job(file_path, callback_function)
 			callback_function(data[1])
 		end,
 	})
+end
+
+-- Returns the include-guard string (as a blocking call) for snippets.
+function M.GetIncludeGuardString()
+	local file_path = vim.api.nvim_buf_get_name(0)
+	local cmd = {
+		"python3",
+		"-c",
+		'"from cpplint import GetHeaderGuardCPPVariable; print(GetHeaderGuardCPPVariable(\\"' .. file_path .. '\\"))"',
+	}
+	local cmd = table.concat(cmd, " ")
+	local r = vim.fn.trim(vim.fn.system(cmd))
+	return r
 end
 
 local function _AddIncludeGuard(define_line_pos)
